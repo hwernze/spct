@@ -1,0 +1,26 @@
+{
+  "name": "spct",
+  "version": "1.0.0",
+  "description": "Simple Page Construction Template",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hwernze/spct.git"
+  },
+  "keywords": [
+    "scss",
+    "gulp"
+  ],
+  "author": "Hendrik Wernze",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hwernze/spct/issues"
+  },
+  "homepage": "https://github.com/hwernze/spct#readme",
+  "dependencies": {
+    "gulp": "^3.9.1"
+  }
+}
