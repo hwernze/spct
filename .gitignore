@@ -1,18 +1,42 @@
-# http://www.gnu.org/software/automake
+# Packages #
+############
+# its better to unpack these files and commit the raw source
+# git has its own built in compression methods
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
 
-Makefile.in
 
-# http://www.gnu.org/software/autoconf
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
 
-/autom4te.cache
-/autoscan.log
-/autoscan-*.log
-/aclocal.m4
-/compile
-/config.h.in
-/configure
-/configure.scan
-/depcomp
-/install-sh
-/missing
-/stamp-h1
+
+
+# Os generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+
+
+# Build Systems #
+#################
+node_modules/
+bower_components/
+.sass-cach
+*.css.map
+build/
+dist/
