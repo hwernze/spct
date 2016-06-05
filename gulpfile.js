@@ -35,8 +35,6 @@ var config = {
     js_mangle: param === '--build' ? true : false,
     js_compress: true
 }
-console.log("-- CONFIG --");
-console.log(config);
 
 //-------//
 // TASKS //
