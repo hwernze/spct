@@ -10,61 +10,60 @@ var gulp = require('gulp'),
     rename = require("gulp-rename"),
     del = require('del'),
     uglify = require('gulp-uglify'),
-    concat = require('gulp-concat');
+    concat = require('gulp-concat'),
+    htmlmin = require('gulp-htmlmin'),
+    browserSync = require('browser-sync').create();
 
 var param = process.argv[process.argv.length -1];
 
 //----------//
 // SETTINGS //
 //----------//
-//TODO: split scss files conf into file-pattern & folders
-//TODO: remove any deploy into the src folder
+//TODO: refern always to min css/js
 
 var config = {
-    src: './src/**/*',
-    scss_files: './src/scss/**/*.scss',
-    // IF Param = --build use -> ./build/css else if param = --pre use -> ./preprod/css else development use -> ./src/css
-    css_out: param === '--build' ? './build/css' : param === '--pre' ? './preprod/css' : './src/css',
+    html_src: './src/*.html',
+    scss_files: '/**/*.scss',
+    scss_srcFolder:'./src/scss',
     css_outputStyle: param === '--build' || param === '--pre' ? {outputStyle: 'compressed'} : '',
     css_file: 'style.css', //Need to be adjusted to your naming convention of your scss entry file/point
     css_file_min: 'style.min.css',
-    js_folder: './src/js',
+    js_srcFolder: './src/js',
     js_files: '/**/*.js',
 	js_file_min: 'app.min.js',
-    js_out: param === '--build' ? './build/js' : param === '--pre' ? './preprod/js' : './src/js',
     js_mangle: param === '--build' ? true : false,
-    js_compress: true
+    js_compress: true,
+    output_dest: param === '--build' ? './build' : './preprod'
 }
 
 //-------//
 // TASKS //
 //-------//
 
+//SCSS
 gulp.task('scss:compile', function () {
-    return gulp.src(config.scss_files)
+    return gulp.src(config.scss_srcFolder + config.scss_files)
     .pipe(sourcemaps.init())
     .pipe(sass(config.css_outputStyle).on('error', sass.logError))
     .pipe( prefixer( { browsers: ['last 6 versions'] }) )
     .pipe(sourcemaps.write('.'))
-	.pipe(gulp.dest(config.css_out));
+	.pipe(gulp.dest(config.output_dest + '/css'))
+    .pipe(browserSync.stream());
 });
 
-gulp.task('scripts:concat', function() {
-    return gulp.src([config.js_folder + config.js_files, '!src/js/**/*.min.js'])
-    .pipe(concat(config.js_file_min))
-    .pipe(gulp.dest(config.js_out));
+gulp.task('css:rename', ['scss:compile'], function() {
+    if (param === '--build' || param === '--pre') {
+        gulp.src(config.output_dest + '/css/' + config.css_file)
+        // gulp.src(output.css_file)
+        .pipe(rename(config.css_file_min))
+        .pipe(gulp.dest(config.output_dest + '/css'));
+    }
 });
 
-// by default gulp-uglify only mangles local vars, not globals
-gulp.task('scripts:compress', ['scripts:concat'], function() {
-    return gulp.src(config.js_out + '/' + config.js_file_min)
-    .pipe(sourcemaps.init())
-    .pipe(uglify({
-        mangle: config.js_mangle,
-        compress: config.js_compress
-    }))
-    .pipe(sourcemaps.write('.'))
-    .pipe(gulp.dest(config.js_out));
+gulp.task('css:cleanFolder', ['css:rename'], function() {
+    if (param === '--build'|| param === '--pre') {
+        del([config.output_dest + '/css/' + config.css_file]);
+    };
 });
 
 // gulp.task('copyCSS', function() {
@@ -72,26 +71,59 @@ gulp.task('scripts:compress', ['scripts:concat'], function() {
 //    .pipe(gulp.dest(output.css_folder));
 // });
 
-gulp.task('renameCSS', ['scss:compile'], function() {
-    if (param === '--build' || param === '--pre') {
-        gulp.src(config.css_out + '/' + config.css_file)
-        // gulp.src(output.css_file)
-        .pipe(rename(config.css_file_min))
-        .pipe(gulp.dest(config.css_out));
-    }
+//JAVASCRIPT
+gulp.task('scripts:concat', function() {
+    return gulp.src([config.js_srcFolder + config.js_files, '!src/js/**/*.min.js'])
+    .pipe(concat(config.js_file_min))
+    .pipe(gulp.dest(config.output_dest + '/js'));
 });
 
-gulp.task('cleanCSSFolder', ['renameCSS'], function() {
-    if (param === '--build'|| param === '--pre') {
-        del([config.css_out + '/' + config.css_file]);
-    };
+// by default gulp-uglify only mangles local vars, not globals
+gulp.task('scripts:compress', ['scripts:concat'], function() {
+    return gulp.src(config.output_dest + '/js/' + config.js_file_min)
+    .pipe(sourcemaps.init())
+    .pipe(uglify({
+        mangle: config.js_mangle,
+        compress: config.js_compress
+    }))
+    .pipe(sourcemaps.write('.'))
+    .pipe(gulp.dest(config.output_dest + '/js'));
 });
+// create a task that ensures the `js` task is complete before
+// reloading browsers
+gulp.task('js-watch', ['scripts:compress'], browserSync.reload);
+
+// HTML
+gulp.task('html:minify', function() {
+  return gulp.src(config.html_src)
+    .pipe(htmlmin({collapseWhitespace: true}))
+    .pipe(gulp.dest(config.output_dest))
+});
+gulp.task('html-watch', ['html:minify'], browserSync.reload);
+
+
+//----------//
+// COMMANDS //
+//----------//
+// Static Server + watching scss/html files
+gulp.task('server', ['scss:compile'], function() {
+
+    browserSync.init({
+        server: "./preprod"
+    });
+
+    gulp.watch(config.scss_srcFolder + config.scss_files, ['scss:compile']);
+    gulp.watch(config.js_srcFolder + config.js_files, ['js-watch']);
+    gulp.watch(config.html_src, ['html-watch']).on('change', browserSync.reload);
+});
+
 
 gulp.task('watch', function () {
-    gulp.watch(config.scss_files, ['scss:compile']);
-    gulp.watch(config.js_files, ['scripts:concat']);
+    gulp.watch(config.scss_srcFolder + config.scss_files, ['scss:compile']);
+    gulp.watch(config.js_srcFolder + config.js_files, ['scripts:concat', 'scripts:compress']);
+    gulp.watch(config.html_src, ['html:minify']);
 });
 
-gulp.task('default', ['scss:compile', 'scripts:concat', 'scripts:compress']);
+gulp.task('default', ['scss:compile', 'scripts:concat', 'scripts:compress', 'html:minify']);
 
-gulp.task('build',['scss:compile', 'renameCSS', 'cleanCSSFolder', 'scripts:concat', 'scripts:compress']);
+gulp.task('build',['scss:compile', 'css:rename', 'css:cleanFolder', 'scripts:concat', 'scripts:compress', 'html:minify']);
