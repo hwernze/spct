@@ -37,6 +37,7 @@ Thumbs.db
 node_modules/
 bower_components/
 .sass-cach
-*.css.map
-build/
-dist/
+# *.css.map
+# dist/
+# build/
+# preprod/
