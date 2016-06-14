@@ -13,4 +13,11 @@ html {
 }
 body {
 
+    @media screen and (max-device-width : 360px) {
+         background-color: grey;
+    }
+}
+img {
+    width: 100%;
+    height: auto;
 }
